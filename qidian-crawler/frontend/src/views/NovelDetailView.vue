@@ -21,8 +21,11 @@
         </thead>
         <tbody>
           <tr v-for="c in chapters" :key="c.id">
-            <td style="border-bottom:1px solid #f0f0f0; padding:8px;">{{ c.title }}</td>
-            <td style="border-bottom:1px solid #f0f0f0; padding:8px;">{{ c.isFree ? 'Y' : 'N' }}</td>
+            <td style="border-bottom:1px solid #f0f0f0; padding:8px;">
+              <router-link :to="`/content/${c.id}`" style="text-decoration:none; color:inherit;">{{ c.title
+                }}</router-link>
+            </td>
+            <td style="border-bottom:1px solid #f0f0f0; padding:8px;">{{ c.free ? 'Y' : 'N' }}</td>
             <td style="border-bottom:1px solid #f0f0f0; padding:8px;">{{ c.contentCrawled ? 'Y' : 'N' }}</td>
           </tr>
         </tbody>
@@ -37,7 +40,6 @@
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getNovel, listChapters, type Chapter, type Novel } from '../lib/api'
-
 const route = useRoute()
 const id = Number(route.params.id)
 

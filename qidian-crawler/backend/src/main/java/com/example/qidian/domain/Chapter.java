@@ -1,7 +1,15 @@
 package com.example.qidian.domain;
 
-import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Lob;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "chapter", indexes = {
@@ -20,7 +28,7 @@ public class Chapter {
     @Column(name = "title", nullable = false, length = 256)
     private String title;
 
-    @Column(name = "chapter_url", length = 1024)
+    @Column(name = "chapter_url", length = 768)
     private String chapterUrl;
 
     @Column(name = "is_free", nullable = false)
@@ -30,7 +38,7 @@ public class Chapter {
     private boolean contentCrawled;
 
     @Lob
-    @Column(name = "content")
+    @Column(name = "content", columnDefinition = "LONGTEXT")
     private String content;
 
     @Column(name = "crawled_at")
