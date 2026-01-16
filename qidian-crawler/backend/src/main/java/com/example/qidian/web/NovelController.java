@@ -7,6 +7,8 @@ import java.util.List;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,6 +50,16 @@ public class NovelController {
     // GET /api/novels/{id}
     public Novel getNovel(@PathVariable Long id) {
         return novelRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("novel not found"));
+    }
+
+    @DeleteMapping("/novels/{id}")
+    // 删除指定小说（同时删除其所有章节）
+    // DELETE /api/novels/{id}
+    @Transactional
+    public void deleteNovel(@PathVariable Long id) {
+        novelRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("novel not found"));
+        chapterRepository.deleteByNovelId(id);
+        novelRepository.deleteById(id);
     }
 
     @PostMapping("/novels/{id}/crawl")
@@ -124,5 +136,12 @@ public class NovelController {
     // POST /api/chapters/{id}/crawl
     public Chapter crawlChapter(@PathVariable Long id) {
         return crawlerService.crawlChapterContent(id);
+    }
+
+    @DeleteMapping("/chapters/{id}")
+    // 删除指定章节
+    // DELETE /api/chapters/{id}
+    public void deleteChapter(@PathVariable Long id) {
+        chapterRepository.deleteById(id);
     }
 }

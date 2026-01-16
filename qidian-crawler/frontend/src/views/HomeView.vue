@@ -32,6 +32,8 @@
               style="padding:4px 8px;">下载</button></td>
           <td style="border-bottom:1px solid #f0f0f0; padding:8px;"><button @click.stop="crawlBook(n)"
               style="padding:4px 8px;">爬取全文</button></td>
+          <td style="border-bottom:1px solid #f0f0f0; padding:8px;"><button @click.stop="deleteNovel(n)"
+              style="padding:4px 8px;">删除</button></td>
         </tr>
       </tbody>
     </table>
@@ -65,6 +67,7 @@ async function load() {
   }
 }
 
+//加个进度条呢
 async function onCrawl() {
   msg.value = ''
   loading.value = true
@@ -120,6 +123,21 @@ async function crawlBook(novel: Novel) {
     await load()
   } catch (e: any) {
     msg.value = e?.response?.data?.message || e?.message || 'Crawl failed'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function deleteNovel(novel: Novel) {
+  msg.value = ''
+  loading.value = true
+  alert("是否确认删除？")
+  try {
+    await axios.delete(`/api/novels/${novel.id}`)
+    msg.value = 'Novel deleted.'
+    await load()
+  } catch (e: any) {
+    msg.value = e?.response?.data?.message || e?.message || 'Delete failed'
   } finally {
     loading.value = false
   }

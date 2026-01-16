@@ -4,6 +4,7 @@ import java.net.URI;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,6 +38,19 @@ public class QidianCrawlerService {
     private static final Pattern INFO_BOOK_ID_PATTERN = Pattern.compile("/info/(\\d+)");
 
     private static final Pattern BQG_HASH_BOOK_ID_PATTERN = Pattern.compile("/book/(\\d+)");
+
+    private static String sanitizeChineseText(String s) {
+        if (!StringUtils.hasText(s)) {
+            return s;
+        }
+        String out = s;
+        // 先去掉拉丁字母/数字（含全角），避免章节名里混入广告/站点信息
+        out = out.replaceAll("[A-Za-zＡ-Ｚａ-ｚ]", "");
+        // 只保留：汉字 + 中日韩标点符号 + 空白+数字
+        out = out.replaceAll("[^\\p{IsHan}\\p{InCJK_Symbols_And_Punctuation}\\s0-9０-９]", "");
+        out = out.replaceAll("\\s+", " ").trim();
+        return out;
+    }
 
     private final NovelRepository novelRepository;
     private final ChapterRepository chapterRepository;
@@ -371,7 +385,9 @@ public class QidianCrawlerService {
         Novel novel = novelRepository.findByQidianBookId(bookKey)
                 .orElseGet(Novel::new);
         novel.setQidianBookId(bookKey);
-        novel.setTitle(StringUtils.hasText(firstPayload.title()) ? firstPayload.title() : ("bqg-" + id));
+        String rawTitle = StringUtils.hasText(firstPayload.title()) ? firstPayload.title() : ("bqg-" + id);
+        String title = sanitizeChineseText(rawTitle);
+        novel.setTitle(StringUtils.hasText(title) ? title : rawTitle);
         novel.setAuthor(firstPayload.author());
         novel.setIntro(null);
         novel.setCoverUrl(null);
@@ -383,7 +399,9 @@ public class QidianCrawlerService {
         for (BqgChapterMeta meta : metas) {
             Chapter c = new Chapter();
             c.setNovelId(novel.getId());
-            c.setTitle(meta.name());
+            String rawChapterTitle = meta.name();
+            String chapterTitle = sanitizeChineseText(rawChapterTitle);
+            c.setTitle(StringUtils.hasText(chapterTitle) ? chapterTitle : rawChapterTitle);
             c.setChapterUrl("https://apibi.cc/api/chapter?id=" + id + "&chapterid=" + meta.chapterId());
             c.setFree(true);
             c.setContentCrawled(false);
@@ -396,6 +414,53 @@ public class QidianCrawlerService {
         }
 
         return new CrawlResult(novel.getId(), saved, metas.size());
+    }
+
+    private static int chineseNumberToInt(String s) {
+        if (!StringUtils.hasText(s)) {
+            return -1;
+        }
+
+        s = s.trim()
+                .replace("〇", "零")
+                .replace("两", "二");
+
+        Map<Character, Integer> d = Map.of(
+                '零', 0, '一', 1, '二', 2, '三', 3, '四', 4,
+                '五', 5, '六', 6, '七', 7, '八', 8, '九', 9
+        );
+
+        int result = 0;
+        int current = 0;
+
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            Integer digit = d.get(c);
+            if (digit != null) {
+                current = digit;
+                continue;
+            }
+            if (c == '十') {
+                result += (current == 0 ? 1 : current) * 10;
+                current = 0;
+                continue;
+            }
+            if (c == '百') {
+                result += (current == 0 ? 1 : current) * 100;
+                current = 0;
+                continue;
+            }
+            if (c == '千') {
+                result += (current == 0 ? 1 : current) * 1000;
+                current = 0;
+                continue;
+            }
+            // 其他字符不认识就返回 -1 表示失败
+            return -1;
+        }
+        result += current;
+
+        return result;
     }
 
     private List<BqgChapterMeta> parseBqgCatalog(String json) {
@@ -415,12 +480,22 @@ public class QidianCrawlerService {
                     continue;
                 }
                 String name = s.trim();
-                Matcher m = Pattern.compile("^第(\\d+)章\\s*(.*)$").matcher(name);
+                Matcher m = Pattern.compile("^第(\\d+|[一二三四五六七八九十百千万零〇两]+)章\\s*(.*)$").matcher(name);
                 if (!m.find()) {
                     continue;
                 }
-                int chapterId = Integer.parseInt(m.group(1));
+                String no = m.group(1); // 可能是 "12" 或 "一"
+                int chapterId;
+                if (no.matches("\\d+")) {
+                    chapterId = Integer.parseInt(no);
+                } else {
+                    chapterId = chineseNumberToInt(no);
+                }
+                if (chapterId <= 0) {
+                    continue;
+                }
                 String tail = m.group(2);
+
                 String display = StringUtils.hasText(tail) ? ("第" + chapterId + "章 " + tail.trim()) : ("第" + chapterId + "章");
                 out.add(new BqgChapterMeta(chapterId, display));
             }
@@ -638,4 +713,5 @@ public class QidianCrawlerService {
     public record CrawlResult(Long novelId, int newChaptersSaved, int chaptersFound) {
 
     }
+
 }
