@@ -70,4 +70,11 @@ public class User {
         this.email = email;
     }
 
+    public String getrole() {
+        return role;
+    }
+
+    public void setrole(String role) {
+        this.role = role;
+    }
 }

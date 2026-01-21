@@ -1,12 +1,14 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Home from "../views/Home.vue";
+import HomeView from "../views/HomeView.vue";
 import NovelDetailView from "../views/NovelDetailView.vue";
 import Content from "../views/Content.vue";
+import Login from "../views/Login.vue";
 
 const routes = [
-  { path: "/", component: Home },
-  { path: "/novel/:id", component: NovelDetailView },
-  { path: "/content/:id", component: Content },
+  { path: "/", component: HomeView },
+  { path: "/login", component: Login },
+  { path: "/novels/:id", component: NovelDetailView, props: true },
+  { path: "/content/:id", component: Content, props: true },
 ];
 
 const router = createRouter({
