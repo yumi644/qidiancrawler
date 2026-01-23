@@ -4,18 +4,16 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.qidian.service.AuthService;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthContoller {
 
-    @PostMapping("/register")
-    public String register() {
-        return "register";
-    }
+    private final AuthService authService;
 
-    @PostMapping("/login")
-    public String login() {
-        return "login";
+    public AuthContoller(AuthService authService) {
+        this.authService = authService;
     }
 
     @PostMapping("/logout")

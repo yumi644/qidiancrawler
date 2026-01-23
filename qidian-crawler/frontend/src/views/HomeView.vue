@@ -5,6 +5,7 @@
       <input v-model="url" placeholder="URL" style="padding:8px; width: 420px;" />
       <button @click="onCrawl" :disabled="loading" style="padding:8px 12px;">Crawl</button>
       <span v-if="msg" style="color:#444;">{{ msg }}</span>
+      <router-link to="/login"><button>Login</button></router-link>
     </div>
 
     <h3 style="margin-top: 16px;">Novels</h3>
